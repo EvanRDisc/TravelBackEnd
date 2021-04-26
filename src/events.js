@@ -33,9 +33,9 @@ router.put('/event/:id', function (req, res, next) {
   );
 });
 
-router.get('/event', function (req, res, next) {
+router.get('/searchRestCity', function (req, res, next) {
   db.query(
-    "SELECT place_name FROM place WHERE place_id IN ( SELECT place_id FROM Restaurant WHERE cus_id in ( SELECT cus_id FROM Cuisine WHERE cus_name = ?));",
+    "SELECT place_name FROM place WHERE address LIKE '%" + req.query.address  + "%' and place_id IN ( SELECT place_id FROM Restaurant WHERE cus_id in ( SELECT cus_id FROM Cuisine WHERE cus_name = ?));",
 	[req.query.cus],
     (error, results) => {
       if (error) {
@@ -50,8 +50,8 @@ router.get('/event', function (req, res, next) {
 
 router.get('/searchTouristCity', function (req, res, next) {
   db.query(
-    "",
-	[req.query.cus],
+    "SELECT place_name FROM place WHERE address LIKE '%" + req.query.address  + "%' and place_id IN ( SELECT place_id FROM TouristSpot WHERE cat_id in ( SELECT cat_id FROM Category WHERE cat_name = ?));",
+	[req.query.cat],
     (error, results) => {
       if (error) {
         console.log(error);
@@ -63,25 +63,12 @@ router.get('/searchTouristCity', function (req, res, next) {
   );
 });
 
-router.get('/searchRestCity', function (req, res, next) {
-  db.query(
-    "",
-	[req.query.cus],
-    (error, results) => {
-      if (error) {
-        console.log(error);
-        res.status(500).json({status: 'error'});
-      } else {
-        res.status(200).json(results);
-      }
-    }
-  );
-});
+
 
 router.get('/searchFav', function (req, res, next) {
   db.query(
-    "",
-	[req.query.cus],
+    "SELECT place_name FROM place WHERE place_id in (SELECT place_id FROM Favourite WHERE user_id IN (SELECT user_id FROM User WHERE user_fname = ?));",
+	[req.query.fname],
     (error, results) => {
       if (error) {
         console.log(error);
@@ -95,8 +82,8 @@ router.get('/searchFav', function (req, res, next) {
 
 router.get('/searchWant', function (req, res, next) {
   db.query(
-    "",
-	[req.query.cus],
+    "SELECT place_name FROM place WHERE place_id in (SELECT place_id FROM WantsToGo WHERE user_id IN (SELECT user_id FROM User WHERE user_fname = ?));",
+	[req.query.fname],
     (error, results) => {
       if (error) {
         console.log(error);
@@ -110,8 +97,8 @@ router.get('/searchWant', function (req, res, next) {
 
 router.get('/searchVisit', function (req, res, next) {
   db.query(
-    "",
-	[req.query.cus],
+    "SELECT place_name FROM place WHERE place_id in (SELECT place_id FROM Visited WHERE user_id IN (SELECT user_id FROM User WHERE user_fname = ?));",
+	[req.query.fname],
     (error, results) => {
       if (error) {
         console.log(error);
@@ -125,8 +112,8 @@ router.get('/searchVisit', function (req, res, next) {
 
 router.get('/searchStar', function (req, res, next) {
   db.query(
-    "",
-	[req.query.cus],
+    "SELECT place_name FROM place WHERE place_id in (SELECT place_id FROM Starred WHERE user_id IN (SELECT user_id FROM User WHERE user_fname = ?));",
+	[req.query.fname],
     (error, results) => {
       if (error) {
         console.log(error);
@@ -139,9 +126,11 @@ router.get('/searchStar', function (req, res, next) {
 });
 
 router.post('/insertReview', (req, res, next) => {
+  var isTrueSet = (req.query.recommended == req.query.recommended);
+
   db.query(
-    '',
-    [owner, req.body.name, req.body.description, new Date(req.body.date)],
+    'INSERT INTO Review VALUES(?, ?, ?, ?);',
+    [req.query.place, req.query.user, req.query.rating, isTrueSet],
     (error) => {
       if (error) {
         console.error(error);
@@ -155,8 +144,8 @@ router.post('/insertReview', (req, res, next) => {
 
 router.post('/insertFav', (req, res, next) => {
   db.query(
-    '',
-    [owner, req.body.name, req.body.description, new Date(req.body.date)],
+    'INSERT INTO Favourite VALUES(?, ?);',
+    [req.query.place, req.query.user],
     (error) => {
       if (error) {
         console.error(error);
@@ -169,8 +158,8 @@ router.post('/insertFav', (req, res, next) => {
 });
 router.post('/insertWant', (req, res, next) => {
   db.query(
-    '',
-    [owner, req.body.name, req.body.description, new Date(req.body.date)],
+    'INSERT INTO WantsToGo VALUES(?, ?);',
+    [req.query.place, req.query.user],
     (error) => {
       if (error) {
         console.error(error);
@@ -185,8 +174,8 @@ router.post('/insertWant', (req, res, next) => {
 
 router.post('/insertStar', (req, res, next) => {
   db.query(
-    '',
-    [owner, req.body.name, req.body.description, new Date(req.body.date)],
+    'INSERT INTO Starred VALUES(?, ?);',
+    [req.query.place, req.query.user],
     (error) => {
       if (error) {
         console.error(error);
@@ -201,8 +190,8 @@ router.post('/insertStar', (req, res, next) => {
 
 router.post('/insertVisit', (req, res, next) => {
   db.query(
-    '',
-    [owner, req.body.name, req.body.description, new Date(req.body.date)],
+     'INSERT INTO Visited VALUES(?, ?, ?);',
+    [req.query.place, req.query.user, req.query.date],
     (error) => {
       if (error) {
         console.error(error);
@@ -214,11 +203,10 @@ router.post('/insertVisit', (req, res, next) => {
   );
 });
 
-
 router.post('/insertUser', (req, res, next) => {
   db.query(
-    '',
-    [owner, req.body.name, req.body.description, new Date(req.body.date)],
+    'INSERT INTO User VALUES(?, ?, ?, ?, ?, ?);',
+    [req.query.id, req.query.fname, req.query.lname, req.query.email, req.query.gender, req.query.dob],
     (error) => {
       if (error) {
         console.error(error);
